@@ -1,0 +1,40 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: linear-gradient(180deg, #fdf6ee 0%, #f8eee3 100%);
+  background-attachment: fixed;
+  color: #4a3b33;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+@layer components {
+  .card {
+    @apply rounded-[28px] bg-card shadow-soft border border-line;
+  }
+  .btn-primary {
+    @apply rounded-full bg-accent px-6 py-4 text-white font-semibold transition
+           hover:brightness-[1.03] active:scale-[0.99]
+           disabled:bg-[#E7D8C9] disabled:text-[#B3A093] disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+  .btn-ghost {
+    @apply rounded-full border border-line bg-white/60 px-5 py-3 text-inkSoft font-medium transition hover:bg-white;
+  }
+  .field {
+    @apply w-full rounded-2xl border border-line bg-white px-5 py-4 text-ink outline-none
+           placeholder:text-inkFaint focus:border-accent focus:ring-2 focus:ring-accentSoft;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full bg-accentSoft px-3 py-1 text-sm font-semibold text-accentDeep;
+  }
+}
