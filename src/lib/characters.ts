@@ -33,7 +33,7 @@ export const CHARACTERS: Record<TypeCode, Character> = {
       "빠른 해결에 집중하면서 기준이나 재발 방지를 놓칠 수 있다.",
     ],
     brake: "이 문제는 누가 한번 풀어볼래?",
-    tieStatement: "문제가 생기면 핵심부터 찾고 풀 방법을 만들어라",
+    tieStatement: "문제가 생기면 핵심부터 찾고 풀 방법을 만들어라.",
   },
   commander: {
     code: "commander",
@@ -53,7 +53,7 @@ export const CHARACTERS: Record<TypeCode, Character> = {
       "현장의 다양한 의견보다 계획과 통제를 앞세울 수 있다.",
     ],
     brake: "내가 정하기 전에 자네 생각부터 들어보자.",
-    tieStatement: "해야 할 일과 역할을 분명히 하고 흐름을 잡아라",
+    tieStatement: "해야 할 일과 역할을 분명히 하고 흐름을 잡아라.",
   },
   artisan: {
     code: "artisan",
@@ -73,7 +73,7 @@ export const CHARACTERS: Record<TypeCode, Character> = {
       "새로운 시도보다 기존 기준을 지키는 데 치우칠 수 있다.",
     ],
     brake: "이 정도면 기준 안에 들어왔다.",
-    tieStatement: "작은 차이도 놓치지 말고 기준을 끝까지 지켜라",
+    tieStatement: "작은 차이도 놓치지 말고 기준을 끝까지 지켜라.",
   },
   developer: {
     code: "developer",
@@ -93,7 +93,7 @@ export const CHARACTERS: Record<TypeCode, Character> = {
       "개인의 상황을 고려하다 역할과 책임이 불분명해질 수 있다.",
     ],
     brake: "사람을 돕되 기준은 분명히 하자.",
-    tieStatement: "답부터 주기보다 직접 해보고 배우게 해라",
+    tieStatement: "답부터 주기보다 직접 해보고 배우게 해라.",
   },
 };
 

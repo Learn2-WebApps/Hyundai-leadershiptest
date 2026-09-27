@@ -245,9 +245,13 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
       <Shell>
         <div className="card space-y-5 p-8 text-center">
           <h2 className="text-[24px] font-extrabold leading-snug">현장에서 나는 주로 어떻게 움직일까?</h2>
-          <p className="text-[15px] leading-relaxed text-inkSoft">
-            각 상황에서 평소의 나와 가장 가까운 행동 하나와 가장 먼 행동 하나를 선택해 주세요.
-          </p>
+          <div className="text-left">
+            <p className="text-[14px] font-extrabold text-accentDeep">[응답 안내]</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-inkSoft">
+              각 문항을 읽고 나의 모습과 가장 가까운 것 1개, 가장 먼 것 1개를 선택해 주세요. 총 12개 문항이며, 두
+              유형의 점수가 같을 경우 마지막 동점 결정 문항으로 최종 유형을 정합니다.
+            </p>
+          </div>
           <Notice>
             가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요. 모든 유형에는 강점이 있으며 정답은
             없습니다.
