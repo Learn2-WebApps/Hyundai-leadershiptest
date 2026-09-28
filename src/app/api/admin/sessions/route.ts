@@ -19,9 +19,9 @@ export async function POST() {
   const store = getStore();
   for (let i = 0; i < 50; i++) {
     const code = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
-    if (await store.getSession(code)) continue;
+    // 중복이면 null 이 돌아온다. 사전 조회가 없어 왕복이 한 번으로 줄어든다.
     const session = await store.createSession(code);
-    return NextResponse.json({ session });
+    if (session) return NextResponse.json({ session });
   }
   return NextResponse.json({ error: "세션 코드를 생성하지 못했습니다. 다시 시도해 주세요." }, { status: 500 });
 }

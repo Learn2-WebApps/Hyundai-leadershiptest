@@ -41,25 +41,33 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
   const [detail, setDetail] = useState<ResultData | null>(null);
   const [pending, setPending] = useState<string | null>(null); // 처리 중인 세션 코드
+  const [sessionsLoaded, setSessionsLoaded] = useState(false); // 목록을 한 번이라도 받아왔는지
   const [loadingParticipants, setLoadingParticipants] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/admin/auth")
-      .then((r) => r.json())
-      .then((j) => setAuthed(!!j.authenticated))
-      .catch(() => setAuthed(false));
-  }, []);
-
+  /**
+   * 세션 목록 요청 하나로 인증 여부까지 판단한다.
+   * (로그인 확인 → 목록 조회로 이어지던 순차 왕복을 한 번으로 줄인다.)
+   */
   const loadSessions = useCallback(async () => {
-    const res = await fetch("/api/admin/sessions");
-    if (!res.ok) return setAuthed(false);
-    const json = await res.json();
-    setSessions(json.sessions ?? []);
+    try {
+      const res = await fetch("/api/admin/sessions");
+      if (res.status === 401) {
+        setAuthed(false);
+        return;
+      }
+      const json = await res.json();
+      setSessions(json.sessions ?? []);
+      setAuthed(true);
+    } catch {
+      setAuthed(false);
+    } finally {
+      setSessionsLoaded(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (authed) loadSessions();
-  }, [authed, loadSessions]);
+    loadSessions();
+  }, [loadSessions]);
 
   const loadParticipants = useCallback(async (code: string) => {
     setSelected(code);
@@ -88,6 +96,8 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
       if (!res.ok) throw new Error("비밀번호가 올바르지 않습니다.");
       setPassword("");
       setAuthed(true);
+      setSessionsLoaded(false);
+      loadSessions();
     } catch (e: any) {
       setError(e?.message ?? "로그인하지 못했습니다.");
     } finally {
@@ -229,7 +239,9 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
           </button>
         </div>
         {error ? <div className="mb-4"><Notice tone="warn">{error}</Notice></div> : null}
-        {sessions.length === 0 ? (
+        {!sessionsLoaded ? (
+          <Notice>세션 목록을 불러오는 중입니다…</Notice>
+        ) : sessions.length === 0 ? (
           <Notice>아직 생성된 세션이 없습니다.</Notice>
         ) : (
           <div className="overflow-x-auto">

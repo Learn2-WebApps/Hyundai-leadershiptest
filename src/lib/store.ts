@@ -34,10 +34,11 @@ export type ParticipantRecord = {
 
 export interface Store {
   readonly kind: "firestore" | "memory";
-  createSession(code: string): Promise<SessionRecord>;
+  /** 코드가 이미 있으면 null 을 반환한다. 사전 조회 없이 한 번의 왕복으로 처리하기 위함. */
+  createSession(code: string): Promise<SessionRecord | null>;
   getSession(code: string): Promise<SessionRecord | null>;
   listSessions(): Promise<SessionRecord[]>;
-  closeSession(code: string): Promise<SessionRecord | null>;
+  closeSession(code: string): Promise<boolean>;
   /** 세션과 해당 세션의 참여자 데이터를 함께 삭제한다. 부분 삭제가 남지 않게 한다. */
   deleteSessionCascade(code: string): Promise<number>;
   createParticipant(p: Omit<ParticipantRecord, "id">): Promise<ParticipantRecord>;
@@ -55,6 +56,7 @@ const mem: Mem = g.__fltMem;
 const memoryStore: Store = {
   kind: "memory",
   async createSession(code) {
+    if (mem.sessions.has(code)) return null;
     const s: SessionRecord = {
       sessionCode: code,
       status: "open",
@@ -73,10 +75,10 @@ const memoryStore: Store = {
   },
   async closeSession(code) {
     const s = mem.sessions.get(code);
-    if (!s) return null;
+    if (!s) return false;
     s.status = "closed";
     s.closedAt = new Date().toISOString();
-    return s;
+    return true;
   },
   async deleteSessionCascade(code) {
     let n = 0;
@@ -147,7 +149,11 @@ function buildFirestoreStore(): Store {
         closedAt: null,
         participantCount: 0,
       };
-      await sessions().doc(code).set(s);
+      try {
+        await sessions().doc(code).create(s); // 이미 있으면 실패한다
+      } catch {
+        return null;
+      }
       return s;
     },
     async getSession(code) {
@@ -159,12 +165,14 @@ function buildFirestoreStore(): Store {
       return q.docs.map((d) => d.data() as SessionRecord).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     },
     async closeSession(code) {
-      const ref = sessions().doc(code);
-      const d = await ref.get();
-      if (!d.exists) return null;
+      // update 는 문서가 없으면 실패하므로 사전 조회 없이 한 번의 왕복으로 처리한다.
       const patch = { status: "closed" as const, closedAt: new Date().toISOString() };
-      await ref.update(patch);
-      return { ...(d.data() as SessionRecord), ...patch };
+      try {
+        await sessions().doc(code).update(patch);
+      } catch {
+        return false;
+      }
+      return true;
     },
     async deleteSessionCascade(code) {
       const q = await participants().where("sessionCode", "==", code).get();
@@ -177,10 +185,13 @@ function buildFirestoreStore(): Store {
     async createParticipant(p) {
       const ref = participants().doc();
       const rec: ParticipantRecord = { ...p, id: ref.id };
-      await ref.set(rec);
-      await sessions()
-        .doc(p.sessionCode)
-        .update({ participantCount: admin.firestore.FieldValue.increment(1) });
+      // 참여자 문서 생성과 참여자 수 증가를 한 번의 커밋으로 처리한다.
+      const batch = db.batch();
+      batch.set(ref, rec);
+      batch.update(sessions().doc(p.sessionCode), {
+        participantCount: admin.firestore.FieldValue.increment(1),
+      });
+      await batch.commit();
       return rec;
     },
     async updateParticipant(id, patch) {

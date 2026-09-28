@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CHARACTERS, CHARACTER_LIST, TYPE_CODES, type TypeCode } from "@/lib/characters";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/questions";
 import ResultView, { type ResultData } from "./ResultView";
@@ -31,6 +31,7 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
   const predictCards = useMemo(() => shuffle(CHARACTER_LIST), []);
   const [predictPick, setPredictPick] = useState<TypeCode | null>(null);
   const [predictedType, setPredictedType] = useState<TypeCode | null>(null);
+  const predictionSaveRef = useRef<Promise<void> | null>(null); // 백그라운드 저장 완료 대기용
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, Draft>>({});
@@ -72,27 +73,26 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
   };
 
   /* ------------ 사전 예상 ------------ */
-  const handlePredict = async () => {
+  /**
+   * 저장 응답을 기다리지 않고 바로 다음 화면으로 넘어간다.
+   * 저장은 백그라운드에서 진행하되, 최종 제출 전에 완료를 보장한다.
+   */
+  const handlePredict = () => {
     if (!predictPick || !participantId) return;
-    setBusy(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/participants/${participantId}/prediction`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          predictedType: predictPick,
-          predictionDisplayOrder: predictCards.map((c) => c.code),
-        }),
-      });
-      if (!res.ok) throw new Error((await res.json())?.error ?? "저장하지 못했습니다.");
-      setPredictedType(predictPick);
-      setStage("intro");
-    } catch (e: any) {
-      setError(e?.message ?? "저장하지 못했습니다.");
-    } finally {
-      setBusy(false);
-    }
+    setPredictedType(predictPick);
+    setStage("intro");
+
+    predictionSaveRef.current = fetch(`/api/participants/${participantId}/prediction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        predictedType: predictPick,
+        predictionDisplayOrder: predictCards.map((c) => c.code),
+      }),
+    })
+      .then(() => undefined)
+      .catch(() => undefined);
   };
 
   /* ------------ 문항 선택 ------------ */
@@ -141,6 +141,7 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
     setBusy(true);
     setError(null);
     try {
+      await predictionSaveRef.current; // 사전 예상 저장이 끝난 뒤 제출한다
       const payload = QUESTIONS.map((q) => ({
         questionId: q.questionId,
         mostOptionId: answers[q.questionId]?.mostOptionId,
@@ -262,16 +263,17 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
       <Shell>
         <div className="card space-y-5 p-8 text-center">
           <h2 className="text-[24px] font-extrabold leading-snug">현장에서 나는 주로 어떻게 움직일까?</h2>
-          <div className="text-left">
+          <div className="rounded-2xl bg-panel px-4 py-5 text-center">
             <p className="text-[14px] font-extrabold text-accentDeep">[응답 안내]</p>
-            <p className="mt-2 text-[15px] leading-relaxed text-inkSoft">
-              각 문항을 읽고 나의 모습과 가장 가까운 것 1개, 가장 먼 것 1개를 선택해 주세요. 총 12개 문항이며, 두
-              유형의 점수가 같을 경우 마지막 동점 결정 문항으로 최종 유형을 정합니다.
+            <p className="mt-3 text-[15px] leading-relaxed text-inkSoft">
+              <span className="block">각 문항을 읽고 나의 모습과 가장 가까운 것 1개, 가장 먼 것 1개를 선택해 주세요.</span>
+              <span className="block">총 12개 문항이며, 두 유형의 점수가 같을 경우</span>
+              <span className="block">마지막 동점 결정 문항으로 최종 유형을 정합니다.</span>
             </p>
           </div>
           <Notice>
-            <span className="block text-center">가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요.</span>
-            <span className="block text-center">모든 유형에는 강점이 있으며 정답은 없습니다.</span>
+            <span className="block text-left">가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요.</span>
+            <span className="block text-left">모든 유형에는 강점이 있으며 정답은 없습니다.</span>
           </Notice>
           <button className="btn-primary w-full" onClick={() => setStage("quiz")}>
             테스트 시작하기
