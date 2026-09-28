@@ -263,18 +263,21 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
       <Shell>
         <div className="card space-y-5 p-8 text-center">
           <h2 className="text-[24px] font-extrabold leading-snug">현장에서 나는 주로 어떻게 움직일까?</h2>
-          <div className="rounded-2xl bg-panel px-4 py-5 text-center">
-            <p className="text-[14px] font-extrabold text-accentDeep">[응답 안내]</p>
-            <p className="mt-3 text-[15px] leading-relaxed text-inkSoft">
-              <span className="block">각 문항을 읽고 나의 모습과 가장 가까운 것 1개, 가장 먼 것 1개를 선택해 주세요.</span>
-              <span className="block">총 12개 문항이며, 두 유형의 점수가 같을 경우</span>
-              <span className="block">마지막 동점 결정 문항으로 최종 유형을 정합니다.</span>
-            </p>
+          <div>
+            <p className="mb-3 text-[14px] font-extrabold text-accentDeep">[응답 안내]</p>
+            <div className="rounded-2xl bg-panel px-4 py-5 text-center text-[15px] leading-relaxed text-inkSoft">
+              <p>
+                <span className="block">각 문항을 읽고 나의 모습과 가장 가까운 것 1개,</span>
+                <span className="block">가장 먼 것 1개를 선택해 주세요.</span>
+                <span className="block">총 12개 문항이며, 두 유형의 점수가 같을 경우</span>
+                <span className="block">마지막 동점 결정 문항으로 최종 유형을 정합니다.</span>
+              </p>
+              <p className="mt-4">
+                <span className="block">가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요.</span>
+                <span className="block">모든 유형에는 강점이 있으며 정답은 없습니다.</span>
+              </p>
+            </div>
           </div>
-          <Notice>
-            <span className="block text-left">가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요.</span>
-            <span className="block text-left">모든 유형에는 강점이 있으며 정답은 없습니다.</span>
-          </Notice>
           <button className="btn-primary w-full" onClick={() => setStage("quiz")}>
             테스트 시작하기
           </button>
