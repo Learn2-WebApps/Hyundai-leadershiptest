@@ -8,11 +8,11 @@ export type Question = { questionId: string; situation: string; options: Option[
  * 각 유형이 ①~④ 위치에 3번씩 배치되어 있으므로 선택지 순서는 고정한다.
  */
 const raw: Array<[string, Array<[string, TypeCode]>]> = [
-  ["작업이 갑자기 꼬이기 시작했다. 이때 나는?", [
-    ["막히는 곳으로 가서 풀 방법부터 찾는다.", "problemSolver"],
-    ["담당을 정하고 역할과 순서를 다시 잡는다.", "commander"],
-    ["빠진 과정이나 기준이 없는지 확인한다.", "artisan"],
-    ["파트원들이 어디서 막혔는지 먼저 듣는다.", "developer"],
+  ["오늘 작업을 마치고 다음 작업을 준비한다. 이때 나는?", [
+    ["파트원들과 잘된 점과 어려웠던 점을 나눈다.", "developer"],
+    ["오늘 막혔던 부분을 어떻게 풀지 다시 생각해본다.", "problemSolver"],
+    ["다음 작업의 역할과 순서를 미리 정한다.", "commander"],
+    ["기준에서 벗어난 부분이 없는지 확인한다.", "artisan"],
   ]],
   ["처음 해보는 작업을 맡게 됐다. 이때 나는?", [
     ["해야 할 일과 맡을 사람부터 정한다.", "commander"],
@@ -74,11 +74,11 @@ const raw: Array<[string, Array<[string, TypeCode]>]> = [
     ["결과를 바꿀 새로운 방법을 시험한다.", "problemSolver"],
     ["목표와 역할을 다시 분명하게 잡는다.", "commander"],
   ]],
-  ["오늘 작업을 마치고 다음 작업을 준비한다. 이때 나는?", [
-    ["파트원들과 잘된 점과 어려웠던 점을 나눈다.", "developer"],
-    ["오늘 막혔던 부분을 어떻게 풀지 다시 생각해본다.", "problemSolver"],
-    ["다음 작업의 역할과 순서를 미리 정한다.", "commander"],
-    ["기준에서 벗어난 부분이 없는지 확인한다.", "artisan"],
+  ["작업이 갑자기 꼬이기 시작했다. 이때 나는?", [
+    ["막히는 곳으로 가서 풀 방법부터 찾는다.", "problemSolver"],
+    ["담당을 정하고 역할과 순서를 다시 잡는다.", "commander"],
+    ["빠진 과정이나 기준이 없는지 확인한다.", "artisan"],
+    ["파트원들이 어디서 막혔는지 먼저 듣는다.", "developer"],
   ]],
 ];
 

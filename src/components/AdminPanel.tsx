@@ -40,6 +40,8 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
   const [detail, setDetail] = useState<ResultData | null>(null);
+  const [pending, setPending] = useState<string | null>(null); // 처리 중인 세션 코드
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/auth")
@@ -62,10 +64,16 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
   const loadParticipants = useCallback(async (code: string) => {
     setSelected(code);
     setDetail(null);
-    const res = await fetch(`/api/admin/sessions/${code}/participants`);
-    if (!res.ok) return;
-    const json = await res.json();
-    setParticipants(json.participants ?? []);
+    setParticipants([]);
+    setLoadingParticipants(true);
+    try {
+      const res = await fetch(`/api/admin/sessions/${code}/participants`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setParticipants(json.participants ?? []);
+    } finally {
+      setLoadingParticipants(false);
+    }
   }, []);
 
   const login = async () => {
@@ -96,17 +104,40 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
     setDetail(null);
   };
 
+  // 서버 응답으로 목록을 바로 갱신한다. 목록 전체를 다시 조회하지 않아 반응이 즉시 보인다.
   const createSession = async () => {
     setBusy(true);
-    await fetch("/api/admin/sessions", { method: "POST" });
-    await loadSessions();
-    setBusy(false);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/sessions", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? "세션을 만들지 못했습니다.");
+      setSessions((prev) => [json.session, ...prev]);
+    } catch (e: any) {
+      setError(e?.message ?? "세션을 만들지 못했습니다.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const closeSession = async (code: string) => {
     if (!confirm(`세션 ${code} 을(를) 종료할까요? 종료하면 새로운 참여가 차단됩니다.`)) return;
-    await fetch(`/api/admin/sessions/${code}`, { method: "PATCH" });
-    await loadSessions();
+    setPending(code);
+    setError(null);
+    // 먼저 화면을 바꾸고, 실패하면 되돌린다.
+    const before = sessions;
+    setSessions((prev) =>
+      prev.map((s) => (s.sessionCode === code ? { ...s, status: "closed", closedAt: new Date().toISOString() } : s))
+    );
+    try {
+      const res = await fetch(`/api/admin/sessions/${code}`, { method: "PATCH" });
+      if (!res.ok) throw new Error("세션을 종료하지 못했습니다.");
+    } catch (e: any) {
+      setSessions(before);
+      setError(e?.message ?? "세션을 종료하지 못했습니다.");
+    } finally {
+      setPending(null);
+    }
   };
 
   const deleteSession = async (code: string, count: number) => {
@@ -115,13 +146,24 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
         ? `세션 ${code} 을(를) 삭제하면 참여자 ${count}명의 진단 결과도 함께 삭제됩니다. 되돌릴 수 없습니다. 삭제할까요?`
         : `세션 ${code} 을(를) 삭제할까요? 되돌릴 수 없습니다.`;
     if (!confirm(warn)) return;
-    await fetch(`/api/admin/sessions/${code}`, { method: "DELETE" });
+    setPending(code);
+    setError(null);
+    const before = sessions;
+    setSessions((prev) => prev.filter((s) => s.sessionCode !== code));
     if (selected === code) {
       setSelected(null);
       setParticipants([]);
       setDetail(null);
     }
-    await loadSessions();
+    try {
+      const res = await fetch(`/api/admin/sessions/${code}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("세션을 삭제하지 못했습니다.");
+    } catch (e: any) {
+      setSessions(before);
+      setError(e?.message ?? "세션을 삭제하지 못했습니다.");
+    } finally {
+      setPending(null);
+    }
   };
 
   if (authed === null)
@@ -183,9 +225,10 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[17px] font-extrabold">세션 목록</h3>
           <button className="btn-primary px-5 py-2.5 text-sm" onClick={createSession} disabled={busy}>
-            새 세션 만들기
+            {busy ? "만드는 중…" : "새 세션 만들기"}
           </button>
         </div>
+        {error ? <div className="mb-4"><Notice tone="warn">{error}</Notice></div> : null}
         {sessions.length === 0 ? (
           <Notice>아직 생성된 세션이 없습니다.</Notice>
         ) : (
@@ -218,18 +261,30 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
                     <td className="text-inkSoft">{fmt(s.closedAt)}</td>
                     <td className="font-semibold">{s.participantCount}명</td>
                     <td className="py-2">
-                      <div className="flex justify-end gap-2">
-                        <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => loadParticipants(s.sessionCode)}>
+                      <div className="flex items-center justify-end gap-2">
+                        {pending === s.sessionCode ? (
+                          <span className="text-xs font-semibold text-inkFaint">처리 중…</span>
+                        ) : null}
+                        <button
+                          className="btn-ghost px-3 py-1.5 text-xs"
+                          onClick={() => loadParticipants(s.sessionCode)}
+                          disabled={pending === s.sessionCode}
+                        >
                           참여자
                         </button>
                         {s.status === "open" ? (
-                          <button className="btn-ghost px-3 py-1.5 text-xs" onClick={() => closeSession(s.sessionCode)}>
+                          <button
+                            className="btn-ghost px-3 py-1.5 text-xs"
+                            onClick={() => closeSession(s.sessionCode)}
+                            disabled={pending === s.sessionCode}
+                          >
                             종료
                           </button>
                         ) : null}
                         <button
-                          className="rounded-full border border-[#E3BFB3] bg-white px-3 py-1.5 text-xs font-medium text-[#A65B48]"
+                          className="rounded-full border border-[#E3BFB3] bg-white px-3 py-1.5 text-xs font-medium text-[#A65B48] disabled:opacity-50"
                           onClick={() => deleteSession(s.sessionCode, s.participantCount)}
+                          disabled={pending === s.sessionCode}
                         >
                           삭제
                         </button>
@@ -246,7 +301,9 @@ export default function AdminPanel({ onExit }: { onExit: () => void }) {
       {selected ? (
         <div className="card p-6">
           <h3 className="mb-4 text-[17px] font-extrabold">세션 {selected} 참여자</h3>
-          {participants.length === 0 ? (
+          {loadingParticipants ? (
+            <Notice>참여자 정보를 불러오는 중입니다…</Notice>
+          ) : participants.length === 0 ? (
             <Notice>아직 참여자가 없습니다.</Notice>
           ) : (
             <div className="overflow-x-auto">

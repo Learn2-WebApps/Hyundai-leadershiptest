@@ -112,6 +112,23 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
     else if (!cur.mostOptionId) setSlot("most");
   };
 
+  /** 결과 화면에서 입장 화면으로 돌아가 새 진단을 시작한다. */
+  const restart = () => {
+    setStage("entry");
+    setSessionCode("");
+    setName("");
+    setParticipantId(null);
+    setPredictPick(null);
+    setPredictedType(null);
+    setIndex(0);
+    setSlot("most");
+    setAnswers({});
+    setTiedTypes([]);
+    setTiePick(null);
+    setResult(null);
+    setError(null);
+  };
+
   const goQuestion = (nextIndex: number) => {
     setIndex(nextIndex);
     const d = answers[QUESTIONS[nextIndex].questionId] ?? {};
@@ -253,8 +270,8 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
             </p>
           </div>
           <Notice>
-            가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요. 모든 유형에는 강점이 있으며 정답은
-            없습니다.
+            <span className="block text-center">가장 좋아 보이는 답보다 실제 나의 모습에 가깝게 선택해 주세요.</span>
+            <span className="block text-center">모든 유형에는 강점이 있으며 정답은 없습니다.</span>
           </Notice>
           <button className="btn-primary w-full" onClick={() => setStage("quiz")}>
             테스트 시작하기
@@ -410,7 +427,7 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
   if (stage === "result" && result)
     return (
       <Shell>
-        <ResultView data={result} />
+        <ResultView data={result} onRestart={restart} />
       </Shell>
     );
 

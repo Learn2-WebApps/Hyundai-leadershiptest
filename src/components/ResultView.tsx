@@ -14,15 +14,33 @@ export type ResultData = {
   tiedTypes: TypeCode[] | null;
 };
 
-const INTERPRETATION =
-  "이 결과는 리더십 능력의 높고 낮음을 평가하는 점수가 아닙니다. 네 가지 행동 중 어떤 모습이 나와 상대적으로 더 가깝거나 먼지를 보여주는 결과입니다. 상황에 따라 네 가지 행동을 균형 있게 활용하는 것이 중요합니다.";
+/** 문장 단위로 줄을 나눠 표시한다. */
+const INTERPRETATION = [
+  "이 결과는 리더십 능력의 높고 낮음을 평가하는 점수가 아닙니다.",
+  "네 가지 행동 중 어떤 모습이 나와 상대적으로 더 가깝거나 먼지를 보여주는 결과입니다.",
+  "상황에 따라 네 가지 행동을 균형 있게 활용하는 것이 중요합니다.",
+];
 
-const TIE_NOTICE = "두 가지 이상의 행동 경향이 비슷하게 나타나, 추가 선택을 통해 대표 캐릭터를 정했습니다.";
+const TIE_NOTICE = ["두 가지 이상의 행동 경향이 비슷하게 나타나, 추가 선택을 통해 대표 캐릭터를 정했습니다."];
 
-const MATCH_MESSAGE =
-  "첫 느낌으로 고른 캐릭터와 진단 결과가 같았습니다. 평소 자신의 행동 특성을 비교적 분명하게 인식하고 있는 것으로 볼 수 있습니다.";
-const MISMATCH_MESSAGE =
-  "처음 예상한 모습과 진단에서 나타난 행동 경향이 달랐습니다. 내가 생각하는 모습과 실제 상황에서 선택하는 행동의 차이를 살펴보세요.";
+const MATCH_MESSAGE = [
+  "첫 느낌으로 고른 캐릭터와 진단 결과가 같았습니다.",
+  "평소 자신의 행동 특성을 비교적 분명하게 인식하고 있는 것으로 볼 수 있습니다.",
+];
+const MISMATCH_MESSAGE = [
+  "처음 예상한 모습과 진단에서 나타난 행동 경향이 달랐습니다.",
+  "내가 생각하는 모습과 실제 상황에서 선택하는 행동의 차이를 살펴보세요.",
+];
+
+const Lines = ({ lines }: { lines: string[] }) => (
+  <>
+    {lines.map((line) => (
+      <span key={line} className="block">
+        {line}
+      </span>
+    ))}
+  </>
+);
 
 const ENGINE_LINK =
   "리더십 엔진이 나를 움직이는 가치관이라면, 리더십 주행모드는 그 가치가 현장에서 행동으로 나타나는 방식입니다.";
@@ -120,19 +138,19 @@ function CaptureLayout({ data }: { data: ResultData }) {
 
         {data.hasTopTie ? (
           <div style={{ background: "#FBF3EA", borderRadius: 20, padding: "18px 22px", fontSize: 14, lineHeight: 1.7, color: "#6E5A4F" }}>
-            {TIE_NOTICE}
+            <Lines lines={TIE_NOTICE} />
           </div>
         ) : null}
 
         <div style={{ background: "#FBF3EA", borderRadius: 20, padding: "18px 22px", fontSize: 14, lineHeight: 1.7, color: "#6E5A4F" }}>
-          {INTERPRETATION}
+          <Lines lines={INTERPRETATION} />
         </div>
       </div>
     </div>
   );
 }
 
-export default function ResultView({ data }: { data: ResultData }) {
+export default function ResultView({ data, onRestart }: { data: ResultData; onRestart?: () => void }) {
   const c = CHARACTERS[data.finalCharacterType];
   const predicted = data.predictedType ? CHARACTERS[data.predictedType] : null;
   const captureRef = useRef<HTMLDivElement>(null);
@@ -189,6 +207,14 @@ export default function ResultView({ data }: { data: ResultData }) {
 
   return (
     <div className="space-y-5">
+      {onRestart ? (
+        <div className="flex justify-end">
+          <button type="button" className="btn-ghost px-4 py-2 text-[13px]" onClick={onRestart}>
+            처음 화면으로
+          </button>
+        </div>
+      ) : null}
+
       <div className="text-center">
         <p className="text-[15px] font-semibold text-inkSoft">{data.participantName} 님, 진단이 끝났습니다.</p>
         <h2 className="mt-2 text-[24px] font-extrabold leading-snug sm:text-[28px]">
@@ -221,7 +247,7 @@ export default function ResultView({ data }: { data: ResultData }) {
         </div>
         {data.predictionMatched === null ? null : (
           <p className="mt-4 text-[14px] leading-relaxed text-inkSoft">
-            {data.predictionMatched ? MATCH_MESSAGE : MISMATCH_MESSAGE}
+            <Lines lines={data.predictionMatched ? MATCH_MESSAGE : MISMATCH_MESSAGE} />
           </p>
         )}
       </div>
@@ -246,8 +272,8 @@ export default function ResultView({ data }: { data: ResultData }) {
         <p className="mt-3 text-[18px] font-bold leading-relaxed text-[#8E5232]">“{c.brake}”</p>
       </div>
 
-      {data.hasTopTie ? <Notice>{TIE_NOTICE}</Notice> : null}
-      <Notice>{INTERPRETATION}</Notice>
+      {data.hasTopTie ? <Notice><Lines lines={TIE_NOTICE} /></Notice> : null}
+      <Notice><Lines lines={INTERPRETATION} /></Notice>
       <Notice>{ENGINE_LINK}</Notice>
 
       <div className="pt-2">
