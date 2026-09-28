@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CHARACTERS, CHARACTER_LIST, TYPE_CODES, type TypeCode } from "@/lib/characters";
 import { QUESTIONS, TOTAL_QUESTIONS } from "@/lib/questions";
 import ResultView, { type ResultData } from "./ResultView";
@@ -40,6 +40,11 @@ export default function TestFlow({ onAdmin }: { onAdmin: () => void }) {
   const [tiedTypes, setTiedTypes] = useState<TypeCode[]>([]);
   const [tiePick, setTiePick] = useState<TypeCode | null>(null);
   const [result, setResult] = useState<ResultData | null>(null);
+
+  // 입장 화면이 열리는 즉시 서버 함수를 깨워 둔다. 코드·이름을 입력하는 동안 준비가 끝난다.
+  useEffect(() => {
+    fetch("/api/warmup").catch(() => undefined);
+  }, []);
 
   const question = QUESTIONS[index];
   const draft = answers[question?.questionId ?? ""] ?? {};
